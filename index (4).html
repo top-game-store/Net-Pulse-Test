@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Net Pulse Test — Real Network Speed Test</title>
+  <meta name="description" content="100% real internet speed test. Actual data transfer via Cloudflare Edge. No simulated speeds." />
+  <link rel="preconnect" href="https://speed.cloudflare.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #030712;
+      --border: #1e293b;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
+      --cyan: #22d3ee;
+      --violet: #a78bfa;
+      --emerald: #34d399;
+      --amber: #fbbf24;
+      --blue: #3b82f6;
+      --grid: rgba(34, 211, 238, 0.04);
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-deep);
+      color: var(--text);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ===== BACKGROUND ===== */
+    .bg-layer {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    .bg-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridPulse 8s ease-in-out infinite;
+    }
+    @keyframes gridPulse {
+      0%, 100% { opacity: 0.5; background-size: 48px 48px; }
+      50% { opacity: 0.85; background-size: 50px 50px; }
+    }
+    .scan-line {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      box-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(34,211,238,0.4);
+      animation: scanMove 6s linear infinite; opacity: 0.6;
+    }
+    @keyframes scanMove {
+      0% { top: -2%; opacity: 0; }
+      10% { opacity: 0.7; }
+      90% { opacity: 0.7; }
+      100% { top: 102%; opacity: 0; }
+    }
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.25;
+      animation: orbFloat 20s ease-in-out infinite;
+    }
+    .orb-1 { width: 400px; height: 400px; background: var(--cyan); top: -10%; left: -10%; animation-duration: 22s; }
+    .orb-2 { width: 300px; height: 300px; background: var(--violet); bottom: -5%; right: -5%; animation-duration: 18s; animation-delay: -5s; }
+    .orb-3 { width: 250px; height: 250px; background: var(--blue); top: 40%; left: 60%; animation-duration: 25s; animation-delay: -10s; opacity: 0.15; }
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      25% { transform: translate(30px,-40px) scale(1.05); }
+      50% { transform: translate(-20px,20px) scale(0.95); }
+      75% { transform: translate(40px,10px) scale(1.02); }
+    }
+    #particleCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .net-node {
+      position: absolute; width: 6px; height: 6px; background: var(--cyan); border-radius: 50%;
+      box-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(34,211,238,0.5);
+      animation: nodePulse 3s ease-in-out infinite;
+    }
+    .net-node::after {
+      content: ''; position: absolute; inset: -4px;
+      border: 1px solid rgba(34,211,238,0.3); border-radius: 50%;
+      animation: nodeRing 3s ease-out infinite;
+    }
+    @keyframes nodePulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.4); opacity: 1; }
+    }
+    @keyframes nodeRing {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+    .node-1 { top: 12%; left: 6%; }
+    .node-2 { top: 22%; right: 8%; animation-delay: 0.5s; }
+    .node-3 { top: 55%; left: 4%; animation-delay: 1s; }
+    .node-4 { top: 70%; right: 6%; animation-delay: 1.5s; }
+    .node-5 { top: 38%; left: 12%; animation-delay: 0.8s; }
+    .node-6 { bottom: 15%; left: 18%; animation-delay: 1.2s; }
+
+    .data-stream {
+      position: absolute; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0.3; animation: streamFlow 4s linear infinite;
+    }
+    @keyframes streamFlow {
+      0% { transform: translateX(-100%); opacity: 0; }
+      20% { opacity: 0.4; }
+      80% { opacity: 0.4; }
+      100% { transform: translateX(100vw); opacity: 0; }
+    }
+    .stream-1 { top: 18%; width: 200px; animation-duration: 5s; }
+    .stream-2 { top: 35%; width: 150px; animation-duration: 6s; animation-delay: 1s; }
+    .stream-3 { top: 58%; width: 180px; animation-duration: 4.5s; animation-delay: 2s; }
+    .stream-4 { top: 78%; width: 220px; animation-duration: 7s; animation-delay: 0.5s; }
+
+    .hex-overlay {
+      position: absolute; inset: 0; opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2322d3ee' fill-opacity='1'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h2v7.5L28 15v2L14 24.5 0 17v-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      animation: hexShift 40s linear infinite;
+    }
+    @keyframes hexShift {
+      from { background-position: 0 0; }
+      to { background-position: 280px 490px; }
+    }
+    .conn-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.12; pointer-events: none;
+    }
+    .conn-svg line {
+      stroke: var(--cyan); stroke-width: 1; stroke-dasharray: 4 8;
+      animation: dashFlow 3s linear infinite;
+    }
+    @keyframes dashFlow { to { stroke-dashoffset: -24; } }
+
+    /* ===== MAIN APP — HORIZONTAL 100vh ===== */
+    .app {
+      position: relative; z-index: 10;
+      min-height: 100vh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 2.5rem 2rem 2rem;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    /* Header — compact top bar */
+    header {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 3.25rem;
+      animation: headerIn 0.8s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes headerIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .logo-row {
+      display: flex; align-items: center; justify-content: center; gap: 0.55rem;
+    }
+    .logo-icon {
+      width: 68px; height: 68px; animation: logoSpin 12s linear infinite; flex-shrink: 0;
+    }
+    @keyframes logoSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .logo-icon svg { width: 100%; height: 100%; }
+    h1 {
+      font-size: 2.15rem; font-weight: 800; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 0%, var(--cyan) 50%, var(--violet) 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      animation: gradientShift 6s ease infinite;
+    }
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .tagline {
+      color: var(--text-dim); font-size: 0.78rem;
+      text-align: center;
+    }
+    .badge-row {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.62rem; font-weight: 600; font-family: var(--font-mono);
+      padding: 0.28rem 0.6rem; border-radius: 999px;
+      border: 1px solid rgba(34,211,238,0.3); background: rgba(34,211,238,0.08); color: var(--cyan);
+      animation: badgeGlow 3s ease-in-out infinite;
+    }
+    .badge:nth-child(2) {
+      border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); color: var(--violet); animation-delay: 0.5s;
+    }
+    .badge:nth-child(3) {
+      border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.08); color: var(--emerald); animation-delay: 1s;
+    }
+    @keyframes badgeGlow {
+      0%, 100% { box-shadow: 0 0 0 rgba(34,211,238,0); }
+      50% { box-shadow: 0 0 10px rgba(34,211,238,0.2); }
+    }
+    .badge-dot {
+      width: 5px; height: 5px; border-radius: 50%; background: currentColor;
+      animation: blink 1.5s step-end infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ===== HORIZONTAL CONTENT ===== */
+    .main {
+      display: flex;
+      gap: 1.35rem;
+      align-items: stretch;
+      animation: cardIn 0.9s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .main > * {
+      min-height: 100%;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* LEFT PANEL — Gauge */
+    .panel-left {
+      flex: 1.05;
+      min-width: 0;
+      background: linear-gradient(160deg, rgba(17,24,39,0.95), rgba(10,15,28,0.98));
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem 1.75rem 1.75rem;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .panel-left::before {
+      content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+      background: linear-gradient(135deg, rgba(34,211,238,0.35), transparent 40%, transparent 60%, rgba(167,139,250,0.25));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      animation: borderRotate 8s linear infinite; pointer-events: none;
+    }
+    @keyframes borderRotate { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
+
+    .corner {
+      position: absolute; width: 14px; height: 14px; border-color: var(--cyan); border-style: solid; opacity: 0.5;
+      animation: cornerPulse 2.5s ease-in-out infinite;
+    }
+    .corner-tl { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+    .corner-tr { top: 10px; right: 10px; border-width: 2px 2px 0 0; animation-delay: 0.3s; }
+    .corner-bl { bottom: 10px; left: 10px; border-width: 0 0 2px 2px; animation-delay: 0.6s; }
+    .corner-br { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; animation-delay: 0.9s; }
+    @keyframes cornerPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.8; } }
+
+    .live-indicator {
+      position: absolute; top: 0.85rem; right: 0.85rem;
+      display: flex; align-items: center; gap: 0.3rem;
+      font-size: 0.6rem; font-family: var(--font-mono); color: var(--emerald);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .live-indicator.visible { opacity: 1; }
+    .live-dot {
+      width: 6px; height: 6px; background: var(--emerald); border-radius: 50%;
+      animation: livePulse 1.2s ease-in-out infinite; box-shadow: 0 0 8px var(--emerald);
+    }
+    @keyframes livePulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    .gauge-wrap {
+      width: 270px; height: 270px;
+      position: relative;
+      animation: gaugeAppear 1s 0.3s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes gaugeAppear {
+      from { opacity: 0; transform: scale(0.75) rotate(-15deg); }
+      to { opacity: 1; transform: scale(1) rotate(0); }
+    }
+    .gauge-wrap svg {
+      width: 100%; height: 100%; transform: rotate(-90deg);
+      filter: drop-shadow(0 0 12px rgba(34,211,238,0.2));
+    }
+    .gauge-track { fill: none; stroke: #1e293b; stroke-width: 10; }
+    .gauge-track-outer {
+      fill: none; stroke: rgba(34,211,238,0.08); stroke-width: 2; stroke-dasharray: 4 6;
+      animation: dashRotate 30s linear infinite;
+    }
+    @keyframes dashRotate { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -314; } }
+    .gauge-fill {
+      fill: none; stroke: url(#gaugeGradient); stroke-width: 10; stroke-linecap: round;
+      stroke-dasharray: 534; stroke-dashoffset: 534;
+      transition: stroke-dashoffset 0.4s cubic-bezier(0.4,0,0.2,1);
+      filter: drop-shadow(0 0 8px rgba(34,211,238,0.6));
+    }
+    .gauge-ticks { fill: none; stroke: rgba(148,163,184,0.25); stroke-width: 1.5; }
+    .gauge-center {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; pointer-events: none;
+    }
+    .speed-value {
+      font-family: var(--font-mono); font-size: 3rem; font-weight: 700;
+      letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums;
+      animation: valuePulse 2s ease-in-out infinite;
+    }
+    @keyframes valuePulse {
+      0%, 100% { text-shadow: 0 0 20px rgba(34,211,238,0.2); }
+      50% { text-shadow: 0 0 35px rgba(34,211,238,0.45); }
+    }
+    .speed-unit {
+      font-size: 0.8rem; color: var(--text-dim); font-weight: 500; margin-top: 0.25rem;
+      font-family: var(--font-mono); letter-spacing: 0.05em;
+    }
+
+    .orbit {
+      position: absolute; inset: -6px; border-radius: 50%;
+      border: 1px dashed rgba(34,211,238,0.15); animation: orbitSpin 20s linear infinite;
+    }
+    .orbit-dot {
+      position: absolute; width: 7px; height: 7px; background: var(--cyan); border-radius: 50%;
+      box-shadow: 0 0 10px var(--cyan); top: 0; left: 50%; transform: translate(-50%,-50%);
+      animation: orbitDotPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes orbitDotPulse {
+      0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+      50% { transform: translate(-50%,-50%) scale(1.3); opacity: 0.7; }
+    }
+    .orbit-2 {
+      inset: -14px; border-color: rgba(167,139,250,0.12);
+      animation-duration: 28s; animation-direction: reverse;
+    }
+    .orbit-2 .orbit-dot {
+      background: var(--violet); box-shadow: 0 0 10px var(--violet); width: 5px; height: 5px;
+    }
+
+    .status-box { margin-top: 0.85rem; min-height: 1.3rem; text-align: center; width: 100%; }
+    .status-text {
+      font-size: 0.78rem; color: var(--text-dim); font-family: var(--font-mono);
+      letter-spacing: 0.02em; animation: statusFade 0.35s ease;
+    }
+    @keyframes statusFade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .status-text.scanning::after {
+      content: ''; display: inline-block; width: 7px; height: 0.95em;
+      background: var(--cyan); margin-left: 3px; vertical-align: text-bottom;
+      animation: cursorBlink 0.8s step-end infinite;
+    }
+    @keyframes cursorBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .sparkline-wrap {
+      width: 100%; height: 32px; margin-top: 0.6rem; opacity: 0; transition: opacity 0.4s;
+    }
+    .sparkline-wrap.visible { opacity: 1; }
+    .sparkline-wrap svg { width: 100%; height: 100%; }
+    #sparkArea { fill: url(#sparkGrad); opacity: 0.3; }
+    #sparkLine {
+      fill: none; stroke: var(--cyan); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      filter: drop-shadow(0 0 4px rgba(34,211,238,0.5));
+    }
+
+    /* RIGHT PANEL — Results + Button */
+    .panel-right {
+      flex: 0.9;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      align-self: stretch;
+      height: auto;
+    }
+
+    .results {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 0.65rem;
+    }
+    .result-card {
+      background: linear-gradient(160deg, rgba(17,24,39,0.95), rgba(10,15,28,0.98));
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem 1.15rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      height: 100%;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      animation: resultIn 0.55s cubic-bezier(0.16,1,0.3,1) both;
+      box-shadow: 0 12px 28px -10px rgba(0,0,0,0.4);
+    }
+    .result-card:nth-child(1) { animation-delay: 0.35s; }
+    .result-card:nth-child(2) { animation-delay: 0.45s; }
+    .result-card:nth-child(3) { animation-delay: 0.55s; }
+    .result-card:nth-child(4) { animation-delay: 0.65s; }
+    @keyframes resultIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .result-card.active {
+      border-color: rgba(34,211,238,0.5);
+      box-shadow: 0 0 24px rgba(34,211,238,0.12);
+      transform: translateY(-2px);
+    }
+    .result-card.active::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      animation: activeBar 1.5s ease-in-out infinite;
+    }
+    @keyframes activeBar {
+      0%, 100% { opacity: 0.4; transform: scaleX(0.6); }
+      50% { opacity: 1; transform: scaleX(1); }
+    }
+    .result-label {
+      font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--text-muted); font-weight: 600; margin-bottom: 0.35rem; font-family: var(--font-mono);
+    }
+    .result-value {
+      font-family: var(--font-mono); font-size: 1.65rem; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .result-value .unit { font-size: 0.68rem; color: var(--text-muted); font-weight: 500; margin-left: 2px; }
+    .result-icon {
+      position: absolute; top: 10px; right: 10px; width: 15px; height: 15px; opacity: 0.22; transition: opacity 0.3s;
+    }
+    .result-card.active .result-icon { opacity: 0.7; }
+
+    /* Button area */
+    .btn-wrap {
+      flex-shrink: 0;
+      margin-top: auto;
+      position: relative;
+    }
+    .btn {
+      width: 100%;
+      padding: 1.25rem 1.5rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--cyan), #06b6d4 50%, #0891b2);
+      color: #0f172a;
+      letter-spacing: 0.02em;
+      transition: transform 0.2s, box-shadow 0.25s, opacity 0.2s;
+      box-shadow: 0 4px 24px rgba(34,211,238,0.35);
+      animation: btnIn 0.6s 0.75s both;
+    }
+    @keyframes btnIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(34,211,238,0.45), 0 0 0 4px rgba(34,211,238,0.15);
+    }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+    .btn.running {
+      background: linear-gradient(135deg, #475569, #334155); color: #e2e8f0;
+      animation: runningPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes runningPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(148,163,184,0.3); }
+      50% { box-shadow: 0 0 0 8px rgba(148,163,184,0); }
+    }
+    .btn::after {
+      content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      animation: shineSweep 3s ease-in-out infinite;
+    }
+    @keyframes shineSweep {
+      0%, 100% { left: -100%; }
+      50% { left: 150%; }
+    }
+    .btn-content {
+      position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 0.45rem;
+    }
+    .btn-icon {
+      width: 16px; height: 16px; animation: iconBounce 2s ease-in-out infinite;
+    }
+    @keyframes iconBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+    }
+    .ripple {
+      position: absolute; border-radius: 50%; background: rgba(255,255,255,0.3);
+      transform: scale(0); animation: rippleOut 0.6s ease-out; pointer-events: none;
+    }
+    @keyframes rippleOut { to { transform: scale(4); opacity: 0; } }
+
+    .progress-track {
+      height: 3px; background: var(--border); border-radius: 2px; margin-top: 0.65rem;
+      overflow: hidden; opacity: 0; transition: opacity 0.3s; position: relative;
+    }
+    .progress-track.visible { opacity: 1; }
+    .progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--violet), var(--cyan));
+      background-size: 200% 100%; border-radius: 2px; transition: width 0.3s ease;
+      animation: progressFlow 1.5s linear infinite; box-shadow: 0 0 10px rgba(34,211,238,0.5);
+    }
+    @keyframes progressFlow {
+      from { background-position: 200% 0; }
+      to { background-position: -200% 0; }
+    }
+    .packet {
+      position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%;
+      top: -0.5px; box-shadow: 0 0 6px #fff; opacity: 0; animation: packetMove 1.2s linear infinite;
+    }
+    @keyframes packetMove {
+      0% { left: 0; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { left: 100%; opacity: 0; }
+    }
+
+    /* Mobile: stack vertically but still try to fit */
+    @media (max-width: 720px) {
+      body { overflow: auto; }
+      .app { padding: 1rem; min-height: 100dvh; justify-content: flex-start; padding-top: 1.25rem; }
+      header { margin-bottom: 0.85rem; }
+      .main { flex-direction: column; gap: 0.85rem; }
+      .panel-left { padding: 1.25rem 1rem; }
+      .gauge-wrap { width: 180px; height: 180px; }
+      .result-card { min-height: 88px; padding: 0.9rem 0.6rem; }
+      .badge:nth-child(3) { display: none; }
+      h1 { font-size: 1.15rem; }
+      .speed-value { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer">
+    <div class="bg-grid"></div>
+    <div class="hex-overlay"></div>
+    <div class="scan-line"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <canvas id="particleCanvas"></canvas>
+    <div class="net-node node-1"></div>
+    <div class="net-node node-2"></div>
+    <div class="net-node node-3"></div>
+    <div class="net-node node-4"></div>
+    <div class="net-node node-5"></div>
+    <div class="net-node node-6"></div>
+    <div class="data-stream stream-1"></div>
+    <div class="data-stream stream-2"></div>
+    <div class="data-stream stream-3"></div>
+    <div class="data-stream stream-4"></div>
+    <svg class="conn-svg" xmlns="http://www.w3.org/2000/svg">
+      <line x1="5%" y1="20%" x2="25%" y2="35%"/>
+      <line x1="80%" y1="15%" x2="95%" y2="40%"/>
+      <line x1="10%" y1="70%" x2="30%" y2="85%"/>
+      <line x1="70%" y1="75%" x2="90%" y2="60%"/>
+      <line x1="40%" y1="10%" x2="55%" y2="25%"/>
+    </svg>
+  </div>
+
+  <div class="app">
+    <header>
+      <div class="logo-row">
+        <div class="logo-icon">
+          <svg viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="#22d3ee" stroke-width="1.5" opacity="0.3"/>
+            <circle cx="20" cy="20" r="12" stroke="#22d3ee" stroke-width="1.5" opacity="0.5"/>
+            <circle cx="20" cy="20" r="5" fill="#22d3ee"/>
+            <circle cx="20" cy="8" r="2.5" fill="#a78bfa"/>
+            <circle cx="32" cy="20" r="2.5" fill="#34d399"/>
+            <circle cx="20" cy="32" r="2.5" fill="#fbbf24"/>
+            <circle cx="8" cy="20" r="2.5" fill="#3b82f6"/>
+            <line x1="20" y1="20" x2="20" y2="8" stroke="#22d3ee" stroke-width="1" opacity="0.6"/>
+            <line x1="20" y1="20" x2="32" y2="20" stroke="#22d3ee" stroke-width="1" opacity="0.6"/>
+            <line x1="20" y1="20" x2="20" y2="32" stroke="#22d3ee" stroke-width="1" opacity="0.6"/>
+            <line x1="20" y1="20" x2="8" y2="20" stroke="#22d3ee" stroke-width="1" opacity="0.6"/>
+          </svg>
+        </div>
+        <h1>Net Pulse Test</h1>
+      </div>
+      <p class="tagline">Real packet transfer · Cloudflare Edge</p>
+      <div class="badge-row">
+        <span class="badge"><span class="badge-dot"></span> LIVE</span>
+        <span class="badge"><span class="badge-dot"></span> NO FAKE</span>
+        <span class="badge"><span class="badge-dot"></span> EDGE</span>
+      </div>
+    </header>
+
+    <div class="main">
+      <!-- LEFT: Gauge -->
+      <div class="panel-left">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+        <div class="live-indicator" id="liveIndicator">
+          <span class="live-dot"></span> MEASURING
+        </div>
+
+        <div class="gauge-wrap">
+          <div class="orbit"><div class="orbit-dot"></div></div>
+          <div class="orbit orbit-2"><div class="orbit-dot"></div></div>
+          <svg viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#22d3ee"/>
+                <stop offset="50%" stop-color="#06b6d4"/>
+                <stop offset="100%" stop-color="#a78bfa"/>
+              </linearGradient>
+              <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <circle class="gauge-track-outer" cx="100" cy="100" r="92"/>
+            <circle class="gauge-track" cx="100" cy="100" r="85"/>
+            <g class="gauge-ticks" transform="rotate(-90 100 100)">
+              <line x1="100" y1="12" x2="100" y2="20" transform="rotate(0 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="18" transform="rotate(30 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="18" transform="rotate(60 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="20" transform="rotate(90 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="18" transform="rotate(120 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="18" transform="rotate(150 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="20" transform="rotate(180 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="18" transform="rotate(210 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="18" transform="rotate(240 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="20" transform="rotate(270 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="18" transform="rotate(300 100 100)"/>
+              <line x1="100" y1="12" x2="100" y2="18" transform="rotate(330 100 100)"/>
+            </g>
+            <circle class="gauge-fill" id="gaugeFill" cx="100" cy="100" r="85"/>
+          </svg>
+          <div class="gauge-center">
+            <div class="speed-value" id="speedValue">—</div>
+            <div class="speed-unit" id="speedUnit">Mbps</div>
+          </div>
+        </div>
+
+        <div class="status-box">
+          <div class="status-text" id="statusText">Ready to measure real network performance</div>
+        </div>
+        <div class="sparkline-wrap" id="sparkWrap">
+          <svg viewBox="0 0 200 40" preserveAspectRatio="none">
+            <polygon id="sparkArea" points=""/>
+            <polyline id="sparkLine" points=""/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results + Button -->
+      <div class="panel-right">
+        <div class="results">
+          <div class="result-card" id="itemPing">
+            <svg class="result-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <div class="result-label">Ping</div>
+            <div class="result-value"><span id="valPing">—</span><span class="unit">ms</span></div>
+          </div>
+          <div class="result-card" id="itemJitter">
+            <svg class="result-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h4"/></svg>
+            <div class="result-label">Jitter</div>
+            <div class="result-value"><span id="valJitter">—</span><span class="unit">ms</span></div>
+          </div>
+          <div class="result-card" id="itemDown">
+            <svg class="result-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            <div class="result-label">Download</div>
+            <div class="result-value"><span id="valDown">—</span><span class="unit">Mbps</span></div>
+          </div>
+          <div class="result-card" id="itemUp">
+            <svg class="result-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            <div class="result-label">Upload</div>
+            <div class="result-value"><span id="valUp">—</span><span class="unit">Mbps</span></div>
+          </div>
+        </div>
+
+        <div class="btn-wrap">
+          <button class="btn" id="startBtn">
+            <span class="btn-content">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span id="btnLabel">Start Speed Test</span>
+            </span>
+          </button>
+          <div class="progress-track" id="progressTrack">
+            <div class="progress-fill" id="progressFill"></div>
+            <div class="packet" style="animation-delay:0s"></div>
+            <div class="packet" style="animation-delay:0.4s"></div>
+            <div class="packet" style="animation-delay:0.8s"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.r = Math.random() * 1.8 + 0.6;
+        this.alpha = Math.random() * 0.4 + 0.1;
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(34,211,238,${this.alpha})`;
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 20000));
+      particles = [];
+      for (let i = 0; i < count; i++) particles.push(new Particle());
+    }
+    initParticles();
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(34,211,238,${(1 - dist / 110) * 0.14})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    const CF_DOWN = 'https://speed.cloudflare.com/__down?bytes=';
+    const CF_UP = 'https://speed.cloudflare.com/__up';
+
+    const startBtn = document.getElementById('startBtn');
+    const btnLabel = document.getElementById('btnLabel');
+    const speedValue = document.getElementById('speedValue');
+    const speedUnit = document.getElementById('speedUnit');
+    const statusText = document.getElementById('statusText');
+    const gaugeFill = document.getElementById('gaugeFill');
+    const progressTrack = document.getElementById('progressTrack');
+    const progressFill = document.getElementById('progressFill');
+    const sparkWrap = document.getElementById('sparkWrap');
+    const sparkLine = document.getElementById('sparkLine');
+    const sparkArea = document.getElementById('sparkArea');
+    const liveIndicator = document.getElementById('liveIndicator');
+    const valPing = document.getElementById('valPing');
+    const valJitter = document.getElementById('valJitter');
+    const valDown = document.getElementById('valDown');
+    const valUp = document.getElementById('valUp');
+    const itemPing = document.getElementById('itemPing');
+    const itemJitter = document.getElementById('itemJitter');
+    const itemDown = document.getElementById('itemDown');
+    const itemUp = document.getElementById('itemUp');
+
+    const CIRC = 2 * Math.PI * 85;
+    gaugeFill.style.strokeDasharray = CIRC;
+    gaugeFill.style.strokeDashoffset = CIRC;
+
+    let sparkData = [];
+    let isRunning = false;
+
+    function setGauge(pct) {
+      gaugeFill.style.strokeDashoffset = CIRC * (1 - Math.min(Math.max(pct, 0), 1));
+    }
+    function formatMbps(n) {
+      if (n >= 100) return n.toFixed(0);
+      if (n >= 10) return n.toFixed(1);
+      return n.toFixed(2);
+    }
+    function setProgress(p) { progressFill.style.width = Math.min(100, Math.max(0, p)) + '%'; }
+    function setStatus(msg, scanning = false) {
+      statusText.textContent = msg;
+      statusText.className = 'status-text' + (scanning ? ' scanning' : '');
+    }
+    function pushSpark(speed) {
+      sparkData.push(speed);
+      if (sparkData.length > 50) sparkData.shift();
+      if (sparkData.length < 2) return;
+      const max = Math.max(...sparkData, 1);
+      const w = 200, h = 40;
+      const pts = sparkData.map((v, i) => {
+        const x = (i / (sparkData.length - 1)) * w;
+        const y = h - (Math.min(v / max, 1) * h * 0.8) - 2;
+        return [x.toFixed(1), y.toFixed(1)];
+      });
+      sparkLine.setAttribute('points', pts.map(p => p.join(',')).join(' '));
+      sparkArea.setAttribute('points', `0,${h} ` + pts.map(p => p.join(',')).join(' ') + ` ${w},${h}`);
+    }
+    function resetUI() {
+      speedValue.textContent = '—'; speedUnit.textContent = 'Mbps';
+      valPing.textContent = '—'; valJitter.textContent = '—';
+      valDown.textContent = '—'; valUp.textContent = '—';
+      setGauge(0); sparkData = [];
+      sparkLine.setAttribute('points', ''); sparkArea.setAttribute('points', '');
+      sparkWrap.classList.remove('visible');
+      [itemPing, itemJitter, itemDown, itemUp].forEach(el => el.classList.remove('active'));
+      setProgress(0); liveIndicator.classList.remove('visible');
+    }
+
+    async function fetchWithRetry(url, retries = 3) {
+      let lastErr;
+      for (let i = 0; i < retries; i++) {
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 22000);
+          const res = await fetch(url, { cache: 'no-store', mode: 'cors', signal: ctrl.signal });
+          clearTimeout(t);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res;
+        } catch (e) {
+          lastErr = e;
+          if (i < retries - 1) await new Promise(r => setTimeout(r, 350 * (i + 1)));
+        }
+      }
+      throw lastErr;
+    }
+
+    async function measurePing() {
+      const times = [];
+      for (let i = 0; i < 8; i++) {
+        const t0 = performance.now();
+        try {
+          const res = await fetchWithRetry(CF_DOWN + '1000&tid=' + Math.random(), 2);
+          await res.arrayBuffer();
+          times.push(performance.now() - t0);
+        } catch (e) {}
+        await new Promise(r => setTimeout(r, 50));
+      }
+      if (times.length < 3) throw new Error('Ping failed. Check network or adblocker.');
+      times.sort((a, b) => a - b); times.pop();
+      const avg = times.reduce((s, v) => s + v, 0) / times.length;
+      let jSum = 0;
+      for (let i = 1; i < times.length; i++) jSum += Math.abs(times[i] - times[i - 1]);
+      return { ping: Math.round(avg), jitter: Math.round((times.length > 1 ? jSum / (times.length - 1) : 0) * 10) / 10 };
+    }
+
+    async function measureDownload(onProgress) {
+      const sizes = [1500000, 5000000, 12000000];
+      let totalBytes = 0;
+      const tStart = performance.now();
+      for (let i = 0; i < sizes.length; i++) {
+        const url = CF_DOWN + sizes[i] + '&tid=' + Math.random();
+        let resp;
+        try { resp = await fetchWithRetry(url, 3); }
+        catch (e) { if (i === 0) throw e; break; }
+        if (!resp.body) {
+          const buf = await resp.arrayBuffer();
+          totalBytes += buf.byteLength;
+          const el = (performance.now() - tStart) / 1000;
+          if (el > 0.05) onProgress((totalBytes * 8) / (el * 1e6));
+          continue;
+        }
+        const reader = resp.body.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          totalBytes += value.byteLength;
+          const el = (performance.now() - tStart) / 1000;
+          if (el > 0.05) onProgress((totalBytes * 8) / (el * 1e6));
+        }
+      }
+      if (totalBytes < 400000) throw new Error('Insufficient download data.');
+      return (totalBytes * 8) / ((performance.now() - tStart) / 1000 * 1e6);
+    }
+
+    function measureUpload(onProgress) {
+      return new Promise((resolve, reject) => {
+        const SIZE = 6000000;
+        const payload = new Uint8Array(SIZE);
+        for (let i = 0; i < SIZE; i += 4096) {
+          payload[i] = (Math.random() * 256) | 0;
+          if (i + 1 < SIZE) payload[i + 1] = (i * 7) & 255;
+        }
+        const xhr = new XMLHttpRequest();
+        const tStart = performance.now();
+        xhr.open('POST', CF_UP + '?tid=' + Math.random(), true);
+        xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+        xhr.timeout = 40000;
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && e.loaded > 0) {
+            const el = (performance.now() - tStart) / 1000;
+            if (el > 0.08) onProgress((e.loaded * 8) / (el * 1e6));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300)
+            resolve((SIZE * 8) / ((performance.now() - tStart) / 1000 * 1e6));
+          else reject(new Error('Upload HTTP ' + xhr.status));
+        };
+        xhr.onerror = () => reject(new Error('Upload network error'));
+        xhr.ontimeout = () => reject(new Error('Upload timeout'));
+        xhr.send(payload);
+      });
+    }
+
+    startBtn.addEventListener('click', function (e) {
+      const rect = this.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+      this.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    });
+
+    async function runSpeedTest() {
+      if (isRunning) return;
+      isRunning = true;
+      resetUI();
+      startBtn.disabled = true;
+      startBtn.classList.add('running');
+      btnLabel.textContent = 'Measuring…';
+      progressTrack.classList.add('visible');
+      sparkWrap.classList.add('visible');
+      liveIndicator.classList.add('visible');
+
+      let downloadMbps = 0;
+      try {
+        setStatus('Measuring latency…', true);
+        setProgress(5);
+        itemPing.classList.add('active');
+        const { ping, jitter } = await measurePing();
+        valPing.textContent = ping;
+        valJitter.textContent = jitter;
+        itemJitter.classList.add('active');
+        setProgress(15);
+
+        setStatus('Downloading real packets…', true);
+        itemDown.classList.add('active');
+        speedUnit.textContent = 'Mbps ↓';
+        downloadMbps = await measureDownload((mbps) => {
+          speedValue.textContent = formatMbps(mbps);
+          setGauge(Math.min(mbps / 500, 1));
+          pushSpark(mbps);
+          setProgress(15 + Math.min(mbps / 12, 45));
+        });
+        valDown.textContent = formatMbps(downloadMbps);
+        speedValue.textContent = formatMbps(downloadMbps);
+        setGauge(Math.min(downloadMbps / 500, 1));
+        setProgress(65);
+
+        setStatus('Uploading real packets…', true);
+        itemUp.classList.add('active');
+        speedUnit.textContent = 'Mbps ↑';
+        sparkData = [];
+        try {
+          const uploadMbps = await measureUpload((mbps) => {
+            speedValue.textContent = formatMbps(mbps);
+            setGauge(Math.min(mbps / 300, 1));
+            pushSpark(mbps);
+            setProgress(65 + Math.min(mbps / 8, 30));
+          });
+          valUp.textContent = formatMbps(uploadMbps);
+        } catch (upErr) {
+          valUp.textContent = '—';
+          setStatus('Upload failed — download result is valid');
+        }
+
+        setProgress(100);
+        setStatus('Test complete · 100% real measurement');
+        speedUnit.textContent = 'Mbps';
+        speedValue.textContent = formatMbps(downloadMbps);
+        setGauge(Math.min(downloadMbps / 500, 1));
+        liveIndicator.classList.remove('visible');
+      } catch (err) {
+        console.error(err);
+        let msg = err.message || 'Unknown error';
+        if (/Failed to fetch|NetworkError|abort/i.test(msg))
+          msg = 'Network error. Disable adblocker · check connection';
+        setStatus('Error: ' + msg);
+        speedValue.textContent = '✕';
+        setGauge(0);
+        liveIndicator.classList.remove('visible');
+      } finally {
+        isRunning = false;
+        startBtn.disabled = false;
+        startBtn.classList.remove('running');
+        btnLabel.textContent = 'Run Again';
+        setTimeout(() => { progressTrack.classList.remove('visible'); setProgress(0); }, 1600);
+      }
+    }
+
+    startBtn.addEventListener('click', runSpeedTest);
+  </script>
+</body>
+</html>
